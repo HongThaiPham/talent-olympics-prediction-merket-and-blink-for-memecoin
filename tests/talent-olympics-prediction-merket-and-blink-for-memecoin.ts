@@ -20,7 +20,10 @@ describe("talent-olympics-prediction-merket-and-blink-for-memecoin", () => {
   const TOKEN_DECIMALS = 9;
   const TOKEN_INIT_AMOUNT = 1_000_000 * 10 ** TOKEN_DECIMALS;
 
-  const [creator] = [anchor.web3.Keypair.generate()];
+  const [creator, user] = [
+    anchor.web3.Keypair.generate(),
+    anchor.web3.Keypair.generate(),
+  ];
 
   console.table({
     creator: creator.publicKey.toBase58(),
@@ -44,6 +47,11 @@ describe("talent-olympics-prediction-merket-and-blink-for-memecoin", () => {
         5 * anchor.web3.LAMPORTS_PER_SOL
       );
       await provider.connection.confirmTransaction(tx);
+      const tx2 = await provider.connection.requestAirdrop(
+        user.publicKey,
+        5 * anchor.web3.LAMPORTS_PER_SOL
+      );
+      await provider.connection.confirmTransaction(tx2);
     }
     {
       // init token for test to poolAuthor
@@ -77,6 +85,7 @@ describe("talent-olympics-prediction-merket-and-blink-for-memecoin", () => {
   it("should create a new prediction market failt because predict in past", async () => {
     const startTime = new anchor.BN(dayjs().subtract(5, "s").unix());
     const endTime = new anchor.BN(dayjs().add(30, "s").unix());
+
     try {
       await program.methods
         .makePredict(startTime, endTime, 1)
@@ -126,6 +135,43 @@ describe("talent-olympics-prediction-merket-and-blink-for-memecoin", () => {
     console.log("make predict tx", tx);
   });
 
+  it("should check prediction result successfully", async () => {
+    const startTime = new anchor.BN(dayjs().add(5, "s").unix());
+    const endTime = new anchor.BN(dayjs().add(35, "s").unix());
+    const [userpredictionAccount] =
+      anchor.web3.PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("prediction"),
+          memeTokenKeypair.publicKey.toBuffer(),
+          user.publicKey.toBuffer(),
+        ],
+        program.programId
+      );
+    await program.methods
+      .makePredict(startTime, endTime, 1)
+      .accountsPartial({
+        signer: user.publicKey,
+        mint: memeTokenKeypair.publicKey,
+        prediction: userpredictionAccount,
+      })
+      .signers([user])
+      .rpc();
+
+    const tx = await program.methods
+      .checkResult()
+      .accountsPartial({
+        signer: user.publicKey,
+        mint: memeTokenKeypair.publicKey,
+        prediction: userpredictionAccount,
+      })
+      .signers([user])
+      .rpc();
+
+    assert.ok(tx);
+
+    console.log("check result tx", tx);
+  });
+
   it("should close prediction market successfully", async () => {
     const tx = await program.methods
       .closePrediction()
@@ -140,20 +186,5 @@ describe("talent-olympics-prediction-merket-and-blink-for-memecoin", () => {
     assert.ok(tx);
 
     console.log("close predict tx", tx);
-  });
-
-  it("should check prediction result successfully", async () => {
-    const tx = await program.methods
-      .checkResult()
-      .accountsPartial({
-        signer: creator.publicKey,
-        mint: memeTokenKeypair.publicKey,
-        prediction: predictionAccount,
-      })
-      .rpc();
-
-    assert.ok(tx);
-
-    console.log("check result tx", tx);
   });
 });
