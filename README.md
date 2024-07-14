@@ -52,3 +52,7 @@ Test case:
 ```bash
 anchor deploy
 ```
+
+## Video demo
+
+[![Watch the video](https://cdn.loom.com/sessions/thumbnails/e99fa56d52354a18b6a2db254a600ce8-with-play.gif)](https://www.loom.com/share/e99fa56d52354a18b6a2db254a600ce8)
