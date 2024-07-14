@@ -6,7 +6,7 @@ pub mod state;
 use anchor_lang::prelude::*;
 
 pub use constants::*;
-pub use instructions::*;
+use instructions::*;
 pub use state::*;
 
 declare_id!("Bfd7dybd1TGncaCLs4UnRy5kK5jPYoH51FxSpkBP9ZjC");
@@ -15,7 +15,20 @@ declare_id!("Bfd7dybd1TGncaCLs4UnRy5kK5jPYoH51FxSpkBP9ZjC");
 pub mod talent_olympics_prediction_merket_and_blink_for_memecoin {
     use super::*;
 
-    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-        initialize::handler(ctx)
+    pub fn make_predict(
+        ctx: Context<MakePredict>,
+        start_time: i64,
+        end_time: i64,
+        direction: u8,
+    ) -> Result<()> {
+        ctx.accounts.handler(start_time, end_time, direction)
+    }
+
+    pub fn close_prediction(ctx: Context<ClosePrediction>) -> Result<()> {
+        ctx.accounts.handler()
+    }
+
+    pub fn check_result(ctx: Context<CheckResult>) -> Result<()> {
+        ctx.accounts.handler()
     }
 }
